@@ -6,5 +6,6 @@ we would like to perform PCA on `scale(X)` or (diagonal) CCA on `scale(X)` and `
 The challenge is that `scale(X)` is no longer sparse. 
 `implicit` implements `scaled_matrix` and `centered_matrix` which implicitly scale and/or center
 an underlying matrix and allows left and right multiplication with a vector 
-(the key operation for fast SVD using `irlba`). 
+(the key operation for fast SVD using `irlba`). This avoids ever creating large dense matrices
+but gives the same results up to (approximately) machine precision. 
 
