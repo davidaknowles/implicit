@@ -1,0 +1,10 @@
+Package: implicit
+Type: Package
+Title: Implicitly scaled matrices and products of two matrices for use in diagonal CCA
+Version: 0.1.0
+Author: David A Knowles
+Maintainer: knowles84@gmail.com
+Description: Look at tests in tests/testthat for example usage. 
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
