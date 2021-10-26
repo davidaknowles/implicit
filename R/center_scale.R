@@ -8,6 +8,8 @@ setMethod("%*%", signature(x="numeric", y="scaled_matrix"),
 setMethod("dim", signature(x="scaled_matrix"),
           function(x) dim(x@data))
 
+#' @import methods
+#' @export
 Scaled_Matrix = function(A,
                          scale = sqrt(apply(A*A, 2, sum)/(nrow(A)-1))) {
   new("scaled_matrix", data = A, scale = scale)
@@ -22,13 +24,16 @@ setMethod("%*%", signature(x="numeric", y="centered_matrix"),
 setMethod("dim", signature(x="centered_matrix"),
           function(x) dim(x@data))
 
+#' @export
 Centered_Matrix = function(A,
                            center = apply(A, 2, mean)) {
   new("centered_matrix", data = A, center = center)
 }
 
+#' @importFrom stats sd
+#' @export
 Center_Scaled_Matrix = function(A,
                                 center = apply(A, 2, mean),
                                 scale = apply(A, 2, sd)) {
-  get_scaled(get_centered(A, center = center), scale = scale)
+  Scaled_Matrix(Centered_Matrix(A, center = center), scale = scale)
 }
