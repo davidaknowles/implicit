@@ -1,0 +1,73 @@
+---
+title: "Compare CCA run time"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+require(tidyverse)
+require(foreach)
+```
+
+```{r}
+P1 = 700
+P2 = 1000
+N = 5000
+ 
+P1s = c(100, 200, 500, 1000, 2000, 5000, 1e4, 2e4, 5e4, 1e5)
+res = foreach(P1 = P1s, .combine = bind_rows) %do% {
+  print(P1)
+  X = (matrix(runif(N * P1), N) < 0.05) * matrix(rnorm(N * P1), N)
+  to_keep = apply(X,2,sd) > 0
+  X = X[,to_keep]
+
+  #Y = ( matrix(runif(N * P2), N) < 0.05 ) * matrix(rnorm(N * P2), N)
+  #to_keep = apply(Y,2,sd) > 0
+  #Y = Y[,to_keep]
+  Y = matrix(rnorm(N * P2), N)
+
+  naive_mem = profmem::profmem(
+    naive_time <- system.time({
+      XY <- t(scale(X)) %*% scale(Y)
+      i = irlba(XY)
+    })
+  )
+
+  implicit_mem = profmem::profmem(
+    implicit_time <- system.time({
+      X_sparse = Matrix(X, sparse=TRUE)
+      # Y_sparse = Matrix(Y, sparse=TRUE)
+      i_fast = implicit_cca(X_sparse, Y)
+    }) )
+
+  err = max(abs(i$d - i_fast$d))
+  #expect_true(err < 1e-6)
+
+  tibble(P1 = P1,
+         naive_mem = sum(naive_mem$bytes)  / 1e6,
+         naive_time = naive_time[1],
+         implicit_mem = sum(implicit_mem$bytes)  / 1e6,
+         implicit_time = implicit_time[1], 
+         err = max(abs(i$d - i_fast$d)) )
+}
+```
+
+```{r}
+breaks = c(100, 1000, 5000, 1e4, 2e4, 5e4, 1e5)
+
+res %>% select(-naive_time, -implicit_time) %>%
+  gather(meth, mem, -P1) %>% 
+  ggplot(aes(P1, mem, col = meth)) + geom_point() + geom_line() + scale_x_sqrt(breaks = breaks)
+```
+
+```{r fig.height=3in, fig.width=4in}
+a %>% select(P1 = P1, naive = naive_time, implicit = implicit_time) %>%
+  gather(Method, time, -P1) %>% 
+  mutate(Method = factor(Method, c("naive","implicit"))) %>%
+  ggplot(aes(P1, time, col = Method, shape = Method)) + geom_point(size = 2.5) + geom_line() + scale_x_sqrt(breaks = breaks) + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), legend.position=c(.1,.8)) + xlab("# single cells") + ylab("CPU time (s)")
+```
